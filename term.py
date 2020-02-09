@@ -21,6 +21,7 @@ def out(c, m):
 _parser = argparse.ArgumentParser( description='Video/Audio library maintainer script' )
 
 _parser.add_argument ( '-s', '--sync', action='store_true',  help='Sync files and jobs' )
+_parser.add_argument ( '-i', '--index', action='store_true', help='Fill index.txt file' )
 _parser.add_argument ( '-j', '--jobs',                       help='Number of paralell jobs', type=int )
 _parser.add_argument ( '-k', '--keys',                       help='Jobs keys to do (w-download,w-torrent,w-hvideo,w-svideo,w-vaudio,w-audio)', type=lambda k: k.split(',') )
 _parser.add_argument ( '-p', '--purge', action='store_true', help='Clean lists: done, doing and failed' )

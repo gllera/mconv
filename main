@@ -1,0 +1,116 @@
+#!/bin/python3
+import os
+import glob
+import math
+import sys
+import re
+import redis
+import workers, conf, term, parse
+
+term.out('header', 'Connecting to redis...')
+redis = redis.StrictRedis( host=conf.REDIS_HOST, decode_responses=True )
+
+regex_gitir = re.compile(r"^https://git.ir/")
+
+parse.init(term, conf)
+workers.init(redis, parse, term, conf)
+
+def Downloads():
+    term.out('header', 'Creating download jobs...')
+
+    torrent = []
+    download = []
+
+    for url in term.args.urls:
+        if regex_gitir.match(url):
+            for i in parse.git_url(url):
+                download.append('|'.join(i))
+                term.out('new_download', i[1])
+        else:
+            torrent.append(url)
+            term.out('new_download', url)
+    
+    redis.rpush('w-torrent',  *torrent)  if len(torrent)  else None
+    redis.rpush('w-download', *download) if len(download) else None
+
+
+def SyncJobs():
+    term.out('header', 'Resetting jobs...')
+    redis.delete('w-probe', 'w-hvideo', 'w-svideo', 'w-audio', 'w-vaudio')
+
+    term.out('header', 'Getting probes...')
+    probes = redis.hgetall('probes')
+    probes_act = {}
+
+    term.out('header', 'Scanning files...')
+    path = os.path.join(conf.LIBRARY, '**', '*.*')
+
+    probes_jobs = []
+
+    for i in glob.iglob(path, recursive=True):
+        if os.path.splitext(i)[1].lower() in conf.ALL_EXTS:
+            t = math.floor(os.stat(i).st_mtime)
+            f = os.path.relpath(i, conf.LIBRARY)
+
+            inProbes = f in probes
+            changed = inProbes and probes[f].split('|')[0] != str(t)
+    
+            if not inProbes or changed:
+                probes_jobs.append(f)
+                term.out('new_probe', f)
+            else:
+                probes_act[f] = probes[f]
+
+    probes = probes_act
+
+    term.out('header', 'Updating probes...')
+    redis.hmset('probes', probes)
+    redis.rpush('w-probe', *probes_jobs) if len(probes_jobs) else None
+
+    term.out('header', 'Syncing jobs...')
+
+    jobs = {
+        'w-hvideo': [],
+        'w-vaudio': [],
+        'w-audio': [],
+    }
+
+    for f, v in probes.items():
+        job = parse.job_probe(f, v)
+
+        if job:
+            jobs[job].append(f)
+    
+    for k, v in jobs.items():
+        redis.rpush(k, *v) if len(v) else None
+
+def Index():
+    idx = []
+
+    for i in os.listdir(conf.LIBRARY):
+        base = os.path.join(conf.LIBRARY, i)
+        if os.path.isdir(base):
+            for j in os.listdir(base):
+                idx.append(os.path.join(i, j))
+    idx.sort()
+
+    fo = open( os.path.join( conf.LIBRARY, 'AA_index.txt' ), 'w' )
+
+    for i in idx:
+        print(i, file=fo)
+
+if term.args.purge:
+    redis.delete('done', 'doing', 'failed')
+
+if term.args.index:
+    Index()
+
+if len(term.args.urls):
+    Downloads()
+
+if term.args.sync:
+    SyncJobs()
+
+if term.args.keys:
+    term.out('header', 'Watching jobs...')
+    workers.start()
