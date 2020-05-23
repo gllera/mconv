@@ -64,7 +64,7 @@ def SyncJobs():
     probes = probes_act
 
     term.out('header', 'Updating probes...')
-    redis.hmset('probes', probes)
+    redis.hmset('probes', probes) if len(probes) else None
     redis.rpush('w-probe', *probes_jobs) if len(probes_jobs) else None
 
     term.out('header', 'Syncing jobs...')
