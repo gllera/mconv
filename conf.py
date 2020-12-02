@@ -1,7 +1,7 @@
 import os
 
 
-REDIS_HOST = '10.0.0.3'
+REDIS_HOST = '10.0.0.2'
 VIDEO_EXTS = 'mp4,m4v,mkv,avi,mov,wmv,wma,flv'
 AUDIO_EXTS = 'mp3,wav,aif'
 
