@@ -1,18 +1,32 @@
-import setuptools
+from setuptools import setup, find_packages
+from subprocess import check_output, DEVNULL
+from os.path import join, dirname
 
+version = '0.0.0'
+version_py = join( dirname(__file__), 'mconv', 'version.py')
+
+try:
+   version_git = check_output( ["git", "describe"], encoding='utf-8', stderr=DEVNULL ).rstrip().split('-')
+   version = '.'.join( version_git[:2] )
+except:
+   print( 'INFO: No git tag found. Setup will use "%s" instead.' % version )
+   pass
+
+with open(version_py, 'w') as fh:
+   fh.write( "__version__='%s'" % version )
 with open("README.md", "r", encoding="utf-8") as fh:
-    long_description = fh.read()
+   long_description = fh.read()
 
-setuptools.setup(
-    name="mconv", # Replace with your own username
-    version="1.0.0",
+setup(
+    name="mconv",
+    version=version,
     author="Gabriel Llera",
     author_email="g113r4@gmail.com",
     description="Multimedia library maintainer",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/gllera/mconv",
-    packages=setuptools.find_packages(),
+    packages=find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

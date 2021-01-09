@@ -12,8 +12,12 @@ from threading import Thread
 from signal import signal, SIGINT
 from time import sleep
 
+try:
+   from .version import __version__
+except ModuleNotFoundError:
+   __version__='0.0.0-local'
 
-_parser = ArgumentParser( prog='mconv', description='Multimedia library maintainer' )
+_parser = ArgumentParser( prog='mconv', description='Multimedia library maintainer v' + __version__ )
 _parser.add_argument ( '-l', '--load',                               help='Process tasks with CPU load: 1 (Low) - 3 (High)',   type=int )
 _parser.add_argument ( '-j', '--jobs',                               help='Number of paralell jobs',   type=int )
 _parser.add_argument ( '-s', '--sync',   action='store_true',        help='Sync database file (default on "load=1" or "load undefined")' )
