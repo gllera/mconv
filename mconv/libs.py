@@ -13,23 +13,21 @@ from signal import signal, SIGINT
 from time import sleep
 
 
-_parser = ArgumentParser( description='Multimedia library maintainer' )
+_parser = ArgumentParser( prog='mconv', description='Multimedia library maintainer' )
 _parser.add_argument ( '-l', '--load',                               help='Process tasks with CPU load: 1 (Low) - 3 (High)',   type=int )
 _parser.add_argument ( '-j', '--jobs',                               help='Number of paralell jobs',   type=int )
-_parser.add_argument ( '-s', '--sync',     action='store_true',      help='Sync database file (default on "load=1")' )
-_parser.add_argument ( '-n', '--nvidia',   action='store_true',      help='Use nvidia hardware when necessary' )
-_parser.add_argument ( '-f', '--fix',      action='store_true',      help='Attempt to fix a video first before convert it' )
-_parser.add_argument ( 'dir', nargs='?',                             help='Path where multimedia library is',  type=lambda x: Path(x) )
+_parser.add_argument ( '-s', '--sync',   action='store_true',        help='Sync database file (default on "load=1" or "load undefined")' )
+_parser.add_argument ( '-n', '--nvidia', action='store_true',        help='Use nvidia hardware when necessary' )
+_parser.add_argument ( '-f', '--fix',    action='store_true',        help='Attempt to fix the video first before convert it' )
+_parser.add_argument ( 'path', nargs=1,                              help='Path where multimedia library is',  type=lambda x: Path(x) )
 
 args = _parser.parse_args()
+chdir( args.path[0] )
 db = Path('.db')
 tmp = Path('.tmp')
 
-if args.dir:
-   chdir(args.dir)
-
 if not args.sync:
-   args.sync = args.load == 1
+   args.sync = not args.load or args.load == 1
 
 if not args.jobs:
    args.jobs = 1

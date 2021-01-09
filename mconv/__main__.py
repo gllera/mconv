@@ -77,3 +77,6 @@ if args.sync:
    for v in to_store:
       if v['pt']:
          fo.writerow( file_to_storeRow(v) )
+
+print()
+print('All done!!')

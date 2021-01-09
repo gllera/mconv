@@ -24,9 +24,9 @@ def process(file):
          file['vc'] = ( name, int(rate) )
 
    if not file['ac'] and file['path'].suffix == m_audio.ext:
-      raise Exception('BAD Audio:', file['path'].relative_to(args.dir))
+      raise Exception('BAD Audio:', file['path'])
 
    if not file['vc'] and file['path'].suffix == m_video.ext:
-      raise Exception('BAD Video:', file['path'].relative_to(args.dir))
+      raise Exception('BAD Video:', file['path'])
 
    file['pt'] = file['mt']
