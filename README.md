@@ -1,4 +1,6 @@
 # converter
+# (documentation outdated)
+
 Script to maintain a multimedia library. It will make sure that the codec and bitrate that each file has is the expected and it will do the transcodding if needed.
 
 It can eficiently handle libraries with more than 100.000 multimedia files automatically.
