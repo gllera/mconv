@@ -5,8 +5,8 @@ from os import walk
 from pathlib import Path
 from traceback import format_exc
 
-import m_audio, m_video, m_probe
-from libs import args, db, tmp, file_to_storeRow, storedRow_to_file, job_queue, start_workers, stop_workers
+from .     import m_audio, m_video, m_probe
+from .libs import args, db, tmp, file_to_storeRow, storedRow_to_file, job_queue, start_workers, stop_workers
 
 tmp.mkdir(exist_ok=True)
 

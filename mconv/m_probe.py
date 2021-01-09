@@ -1,8 +1,8 @@
 from shlex import join
 from json import loads
 
-from libs import args, call
-import m_audio, m_video
+from .     import m_audio, m_video
+from .libs import args, call
 
 exts = [ m_audio.ext, m_video.ext ]
 

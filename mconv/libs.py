@@ -13,7 +13,7 @@ from signal import signal, SIGINT
 from time import sleep
 
 
-_parser = ArgumentParser( description='Multimedia library maintainer script' )
+_parser = ArgumentParser( description='Multimedia library maintainer' )
 _parser.add_argument ( '-l', '--load',                               help='Process tasks with CPU load: 1 (Low) - 3 (High)',   type=int )
 _parser.add_argument ( '-j', '--jobs',                               help='Number of paralell jobs',   type=int )
 _parser.add_argument ( '-s', '--sync',     action='store_true',      help='Sync database file (default on "load=1")' )

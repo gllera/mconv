@@ -1,5 +1,5 @@
-from libs import args, tempfile, call
 from shutil import move
+from .libs import args, tempfile, call
 
 ext = '.mp3'
 
