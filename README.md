@@ -4,11 +4,9 @@
 
 Easy and efficiently, analyze a whole multimedia library to make sure that everything match a desired format and convert what doesn't to make it match. The scans are cached to greately decrease resume/re-scan times. Nvidia hardware acceleration is supported too.
 
-Extensions taken into account and target formats:
-| Extension | A.format | A.bit_rate    | V.format | V.bit_rate |
-| :---:     | :---:    | :---:         | :---:    | :---:      |
-| .mp3      | mp3      | < 128.1kbps   | -        | -          |
-| .mp4      | acc      | < 128.1kbps   | h264     | < 600kbps  |
+## Target format by extension
+- `.mp3`: **A.format:** `mp3`, **A.bitrate:** < `128.1kbps`
+- `.mp4`: **A.format:** `acc`, **A.bitrate:** < `128.1kbps`, **V.format:** `h264`, **B.bitrate:** < `600kbps`
 
 **Note:** If a video stream from a `.mp4` file needs to be converted to reduce his `bit_rate`, his frame rate will be limited to `30fps` and his height/width resolution to `1280` to keep a nice image quality.
 
