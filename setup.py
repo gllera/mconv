@@ -1,4 +1,6 @@
-from setuptools import setup, find_packages
+#!/bin/env python
+
+from setuptools import setup
 from subprocess import check_output, DEVNULL
 from os.path import join, dirname
 
@@ -7,6 +9,7 @@ version_py = join( dirname(__file__), 'mconv', 'version.py')
 
 try:
    version_git = check_output( ["git", "describe"], encoding='utf-8', stderr=DEVNULL ).rstrip().split('-')
+   version_git[0] = version_git[0][1:]
    version = '.'.join( version_git[:2] )
 except:
    print( 'INFO: No git tag found. Setup will use "%s" instead.' % version )
@@ -26,7 +29,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/gllera/mconv",
-    packages=find_packages(),
+    packages=['mconv'],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

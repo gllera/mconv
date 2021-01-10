@@ -2,13 +2,32 @@ from shlex import join
 from json import loads
 
 from .     import m_audio, m_video
-from .libs import args, call
+from .libs import call, do_group
 
 exts = [ m_audio.ext, m_video.ext ]
 
+def test(file, incist=False):
+   if not( incist or do_group(1) ):
+      return False
 
-def process(file):
-   file['ac'] = file['vc'] = None
+   if not file['mt']:
+      try:
+         file['mt'] = int( file['path'].stat().st_mtime )
+      except:
+         pass
+         file['pt'] = file['ac'] = file['vc'] = None
+         print(' E ', 'Not Found:', file['path'])
+         return False
+
+   return not file['pt'] or file['pt'] != file['mt']
+
+
+
+def process(file, incist=False):
+   if not test(file, incist):
+      return False
+
+   file['pt'] = file['ac'] = file['vc'] = None
 
    print( ' ? ', file['path'] )
    stdout = call([ 'ffprobe', '-v', 'quiet', '-print_format', 'json', '-show_streams', str(file['path']) ])

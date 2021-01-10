@@ -1,87 +1,65 @@
-# converter
-# (documentation outdated)
+# Multimedia library converter
 
-Script to maintain a multimedia library. It will make sure that the codec and bitrate that each file has is the expected and it will do the transcodding if needed.
+**WARNING!! The original multimedia files will be replaced with the converted versions so, you may prefer to check that the result will be what you expect with some test files first. Btw, the replacement is atomic so it won't get corrupted in case of error or forced exit.**
 
-It can eficiently handle libraries with more than 100.000 multimedia files automatically.
-I was no able to find a free/paid software that allows me to do that, so I made my own :)
+Easy and efficiently, analyze a whole multimedia library to make sure that everything match a desired format and convert what doesn't to make it match. The scans are cached to greately decrease resume/re-scan times. Nvidia hardware acceleration is supported too.
 
-**Requisites:**
-- ffmpeg
-- redis server
+Extensions taken into account and target formats:
+| Extension | A.format | A.bit_rate    | V.format | V.bit_rate |
+| :---:     | :---:    | :---:         | :---:    | :---:      |
+| .mp3      | mp3      | < 128.1kbps   | -        | -          |
+| .mp4      | acc      | < 128.1kbps   | h264     | < 600kbps  |
+
+**Note:** If a video stream from a `.mp4` file needs to be converted to reduce his `bit_rate`, his frame rate will be limited to `30fps` and his height/width resolution to `1280` to keep a nice image quality.
+
+## Requisites
 - python3
-- pip3 modules: bs4, redis, colorama, argparse
+- ffmpeg (https://ffmpeg.org/download.html)
 
-**Configuration:**
+\* it basically works anywhere (`arm`, `x86`, `linux`, `windows`, ...)
 
-* Change de following files as needed:
-
-conf.py:
-```python3
-# redis server host
-REDIS_HOST = '10.0.0.3'
-
-# Multimedia library path
-LIBRARY = '/XXXX/YYYYY/ZZZZZZ'
-
-# Temporal folder to save finished transcodding and ongoing ones
-TEMPORAL = '/XXXX/YYYYY/ZZZZZZ'
-```
-
-parse.py:
-```python3
-probe = 'ffprobe -v quiet -print_format json -show_streams'
-aria = 'aria2c --disable-ipv6=true --follow-torrent=mem --seed-time=0 --enable-color=false --check-certificate=false --console-log-level=error --summary-interval=0'
-ffmpeg = 'ffmpeg -hide_banner -y'
-ffmpeg_vo = '-vsync 2 -r 30 -vf scale=1280x1280:force_original_aspect_ratio=decrease -b:v 500k -movflags +faststart'
-
-# Commands used
-cmds = {
-    # To get coddecs details about a file
-    'w-probe': '%s {0}' % probe,
-    # To transcode a video file using nvidia hardware aceleration
-    'w-hvideo': '%s -hwaccel nvdec -i {0} -c:a copy -c:v h264_nvenc %s -f mp4 {1}' % ( ffmpeg, ffmpeg_vo ),
-    # To transcode a video file using the cpu
-    'w-svideo': '%s -i {0} -c:a copy -c:v h264 %s -f mp4 {1}' % ( ffmpeg, ffmpeg_vo ),
-    # To transcode the audio of a video file
-    'w-vaudio': '%s -i {0} -c:a aac -b:a 100k -c:v copy -f mp4 {1}' % ( ffmpeg ),
-    # To transcode an audio file
-    'w-audio': '%s -i {0} -c:a mp3 -b:a 128k -f mp3 {1}' % ( ffmpeg ),
-    # To download a file
-    'w-download': '%s -d / -o {1} {0}' % aria,
-    # To download a torrent
-    'w-torrent': '%s -d {1} {0}' % aria
-}
-
-# This function makes sure that the file's coddecs are correct.
-# If you have a different needs, you should change this one it too.
-def job_codec(f, codecs):
-    (...)
-```
-
-**Usage:**
-
+## Installation
+**Using pip:**
 ```bash
-# To print a detailed usage text:
-./main -h
-
-# To scan files in the library and create jobs to analize them if needed:
-./main -s
-
-# To analize and transcode the files if needed:
-./main -k w-download,w-torrent,w-svideo,w-vaudio,w-audio
-
-# To transcode the files using the GPU you may notice
-# that there is a maximum supported number of transcodding jobs that they can run in parallel.
-# You can match that amount use the parameter '-jN' as needed.
-# By default, all the videos are transcodded using the GPU.
-./main -j2 -k w-hvideo
-
-# To force retry some jobs, you can clean the redis lists 'done', 'doing' and 'failed'
-# using the command:
-./main -p
+$ pip install mconv
 ```
 
-**Logs:**
+## Usage
+To convert multimedia files recursively at current path:
+```
+$ python -m mconv .
+```
+See help with:
+```
+$ python -m mconv -h
+usage: mconv [-h] [-t M] [-j N] [-n] path
 
-Executed commands output is appended to: **$TEMP/converter.out**
+Multimedia library converter
+
+positional arguments:
+  path            Library path
+
+optional arguments:
+  -h, --help      show this help message and exit
+  -t M, --tier M  Subgroups of tasks to process based on CPU demand: 1 (Low) - 3 (High).
+  -j N, --jobs N  Number of paralell jobs
+  -n, --nvidia    Use nvidia hardware when necessary
+```
+**Tiers details and his default `Jobs` value:**
+- `1` - **Taks:** library scan, format reading and cache update. **Jobs:** `cpu_cores * 2`
+- `2` - **Taks:** process audio streams. **Jobs:** `cpu_cores`
+- `3` - **Taks:** process video streams. **Jobs:** `1`
+
+\* If a video file needs video and audio streem conversion, it's tier `3` but if only needs audio conversion, it's tier `2`.
+
+\* Default **Tier** value is `123` (all).
+
+\* When multiple **Tiers** are selected, default **Jobs** value is the minimum of them.
+
+## Tips and tricks
+- Don't process all **Tiers** in the same execution or you won't be able to take advantage of all your cores efficiently. On a single machine, it's better to execute each **Tier** separated. In the future, this may be the default behaviour when multiple **Tiers** are defined.
+- Once **Tier** `1` was executed, **Tier** `2` and **Tier** `3` can be executed safely at the same time (also on different machines with a NAS).
+- Maximum **Jobs** with Nvidia hardware aceleration depends on GPU model. See "*Max # of concurrent sessions*" on "*Encoder*" at  https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new
+- If a video can't be converted using Nvidia hardware acceleration, try without it, it may work...
+- It's safe to delete `.tmp` folder created at library path when no **Tier** `2` or `3` are running.
+- Use an external tool/script to bulk rename audio/video extensions to `.mp3/.mp4` to convert them with `mconv`.

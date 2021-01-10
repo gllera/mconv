@@ -1,13 +1,13 @@
 from shutil import move
-from .libs import args, tempfile, call
+from .libs import tempfile, call, do_group
 
 ext = '.mp3'
 
 def test(file):
-   if file['suffix'] != ext:
+   if file['suffix'] != ext or not do_group(2):
       return False
 
-   return file['ac'] and ( not args.load or args.load == 2 ) and ( file['ac'][0] != 'mp3' or file['ac'][1] > 128100 )
+   return file['ac'] and ( file['ac'][0] != 'mp3' or file['ac'][1] > 128100 )
 
 
 

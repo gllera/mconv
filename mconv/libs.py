@@ -11,36 +11,51 @@ from queue import Queue
 from threading import Thread
 from signal import signal, SIGINT
 from time import sleep
+from shutil import which
 
 try:
    from .version import __version__
 except ModuleNotFoundError:
    __version__='0.0.0-local'
 
-_parser = ArgumentParser( prog='mconv', description='Multimedia library maintainer v' + __version__ )
-_parser.add_argument ( '-l', '--load',                               help='Process tasks with CPU load: 1 (Low) - 3 (High)',   type=int )
-_parser.add_argument ( '-j', '--jobs',                               help='Number of paralell jobs',   type=int )
-_parser.add_argument ( '-s', '--sync',   action='store_true',        help='Sync database file (default on "load=1" or "load undefined")' )
-_parser.add_argument ( '-n', '--nvidia', action='store_true',        help='Use nvidia hardware when necessary' )
-_parser.add_argument ( '-f', '--fix',    action='store_true',        help='Attempt to fix the video first before convert it' )
-_parser.add_argument ( 'path', nargs=1,                              help='Path where multimedia library is',  type=lambda x: Path(x) )
+
+_parser = ArgumentParser( prog='mconv', description='Multimedia library converter v' + __version__ )
+_parser.add_argument ( '-t', '--tier',   action='append',     help='Subgroups of tasks to process based on CPU demand: 1 (Low) - 3 (High)', dest="M",  type=int )
+_parser.add_argument ( '-j', '--jobs',                        help='Number of paralell jobs',   type=int, dest="N" )
+_parser.add_argument ( '-n', '--nvidia', action='store_true', help='Use nvidia hardware when necessary' )
+_parser.add_argument ( 'path', nargs=1,                       help='Library path',  type=lambda x: Path(x) )
 
 args = _parser.parse_args()
 chdir( args.path[0] )
 db = Path('.db')
 tmp = Path('.tmp')
+groups_bin = 31
 
-if not args.sync:
-   args.sync = not args.load or args.load == 1
+for i in [ 'ffmpeg', 'ffprobe' ]:
+   if not which(i):
+      print( 'Error, not found on PATH:', i )
+      exit(0)
 
-if not args.jobs:
-   args.jobs = 1
+if args.M:
+   groups_bin = 0
 
-   if args.load:
-      if args.load == 1:
-         args.jobs = cpu_count() * 2
-      elif args.load == 2:
-         args.jobs = cpu_count()
+   for rest in args.M:
+      while rest > 0:
+         i = int(rest % 10)
+         rest = int(rest / 10)
+         if i < 4:
+            groups_bin = groups_bin | 1 << i
+
+def do_group(id):
+   return groups_bin & 1 << id
+
+if not args.N:
+   if do_group(3):
+      args.N = 1
+   elif do_group(2):
+      args.N = cpu_count()
+   else:
+      args.N = cpu_count() * 2
 
 
 global running
@@ -67,7 +82,7 @@ def worker_loop(processor):
                print(' E ', str(e))
 
 def start_workers(processor):
-   for i in range(args.jobs):
+   for i in range(args.N):
       worker = Thread( target=worker_loop, args=(processor,) )
       workers.append( worker )
       worker.start()
@@ -80,7 +95,7 @@ def stop_workers(forced=False):
    global running
    running = False
 
-   for i in range(args.jobs):
+   for i in range(args.N):
       job_queue.put(None)
 
    for worker in workers:

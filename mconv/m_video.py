@@ -1,5 +1,5 @@
 from shutil import move
-from .libs import args, tempfile, call
+from .libs import args, tempfile, call, do_group
 
 ext = '.mp4'
 
@@ -7,18 +7,21 @@ def needs_change(file):
    ac = file['ac'] and ( file['ac'][0] != 'aac'  or file['ac'][1] > 128100 )
    vc = file['vc'] and ( file['vc'][0] != 'h264' or file['vc'][1] > 600000 )
 
-   if ( args.load == 2 and vc ) or ( args.load == 3 and not vc ):
-      return False, False
-
    return ac, vc
 
 
 
 def test(file):
-   if args.load == 1 or file['suffix'] != ext:
+   if file['suffix'] != ext or not ( do_group(2) or do_group(3) ):
       return False
 
-   return any( needs_change(file) )
+   bad_ac, bad_vc = needs_change(file)
+
+   if do_group(2):
+      if do_group(3):
+         return bad_ac or bad_vc
+      return bad_ac and not bad_vc
+   return bad_vc
 
 
 
@@ -27,12 +30,6 @@ def process(file):
       return False
 
    output = tempfile()
-
-   if args.fix:
-      print( ' R ', file['path'] )
-      call( [ 'ffmpeg', '-hide_banner', '-y', '-i', str(file['path']), '-c', 'copy', '-f', 'avi', str(output) ] )
-      move( output, file['path'] )
-
    bad_ac, bad_vc = needs_change(file)
 
    cmd  = [ 'ffmpeg', '-hide_banner', '-y' ]
