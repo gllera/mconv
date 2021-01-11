@@ -44,9 +44,9 @@ optional arguments:
   -n, --nvidia    Use nvidia hardware when necessary
 ```
 **Tiers details and his default `Jobs` value:**
-- `1` - **Taks:** library scan, format reading and cache update. **Jobs:** `cpu_cores * 2`
-- `2` - **Taks:** process audio streams. **Jobs:** `cpu_cores`
-- `3` - **Taks:** process video streams. **Jobs:** `1`
+- `1` - **Tasks:** library scan, format reading and cache update. **Jobs:** `cpu_cores * 2`
+- `2` - **Tasks:** process audio streams. **Jobs:** `cpu_cores`
+- `3` - **Tasks:** process video streams. **Jobs:** `1`
 
 \* If a video file needs video and audio streem conversion, it's tier `3` but if only needs audio conversion, it's tier `2`.
 
